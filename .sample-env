@@ -1,0 +1,3 @@
+TWITCHTV_CLIENT_ID=fake_id
+TWITCHTV_CLIENT_SECRET=fake_secret
+TWITCHTV_REDIRECT_URI="http://127.0.0.1:3000/auth/twitchtv/callback"
