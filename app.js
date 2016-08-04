@@ -4,11 +4,27 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var dotenv = require('dotenv');
+dotenv.load();
 
 var routes = require('./routes/index');
-var users = require('./routes/users');
+var twitchAuth = require('./routes/auth/twitchtv/auth');
+var twitchAuthCallback = require('./routes/auth/twitchtv/callback');
+
+var config = require('./config/server');
+
+var twitch = require('./api/twitchtv/settings.js');
 
 var app = express();
+
+app.use('/test', function(req, res) {
+  twitch.getAuthenticatedUserChannel(config.ACCESS_TOKEN, function(request, response) {
+    console.log(response);
+    res.render('test', {
+      data: response
+    });
+  });
+});
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -18,7 +34,9 @@ app.set('view engine', 'ejs');
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(logger('dev'));
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({
+  extended: false
+}));
 app.use(cookieParser());
 app.use(require('node-sass-middleware')({
   src: path.join(__dirname, 'public'),
@@ -29,7 +47,8 @@ app.use(require('node-sass-middleware')({
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', routes);
-app.use('/users', users);
+app.use('/auth/twitchtv', twitchAuth);
+app.use('/auth/twitchtv/callback', twitchAuthCallback);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
