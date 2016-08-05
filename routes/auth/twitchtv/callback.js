@@ -17,7 +17,7 @@ router.get('/',
          * }
          */
         config.ACCESS_TOKEN = body.access_token;
-        res.redirect('/test');
+        res.redirect('https://pitangui.amazon.com/api/skill/link/MANE89Q78DSRV');
       }
     })
   });
