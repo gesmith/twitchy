@@ -22,7 +22,7 @@ router.get('/',
         // "&state=#{session[:state]}" \
         // "&client_id=#{session[:client_id]}" \
         // '&response_type=Bearer'
-        res.redirect(`https://pitangui.amazon.com/spa/skill/account-linking-status.html?vendorId=${process.env.AMAZON_VENDOR_ID}#access_token=${body.access_token},${process.env.TWITCHTV_CLIENT_SECRET}&client_id=${process.env.TWITCHTV_CLIENT_ID}&response_type=Bearer`);
+        res.redirect(`https://pitangui.amazon.com/spa/skill/account-linking-status.html?vendorId=${process.env.AMAZON_VENDOR_ID}#access_token=${body.access_token}&client_id=${process.env.TWITCHTV_CLIENT_ID}&response_type=Bearer`);
       }
     })
   });
