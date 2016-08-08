@@ -25,13 +25,14 @@ router.get('/callback',
          *   scopes: [array of granted scopes]
          * }
          */
+         console.log('!!!callback ' + state);
         config.ACCESS_TOKEN = body.access_token;
         // "vendorId=#{session[:vendor_id]}" \
         // "#access_token=#{access_token.token},#{access_token.secret}" \
         // "&state=#{session[:state]}" \
         // "&client_id=#{session[:client_id]}" \
         // '&response_type=Bearer'
-        res.redirect(`https://pitangui.amazon.com/spa/skill/account-linking-status.html?vendorId=${process.env.AMAZON_VENDOR_ID}#access_token=${body.access_token}&state=${state}&client_id=${process.env.TWITCHTV_CLIENT_ID}&response_type=Bearer`);
+        res.redirect(`https://pitangui.amazon.com/spa/skill/account-linking-status.html?vendorId=${process.env.AMAZON_VENDOR_ID}#access_token=${body.access_token}&state=${state}&client_id=${process.env.AMAZON_CLIENT_ID}&response_type=Bearer`);
       }
     })
   });
