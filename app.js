@@ -8,8 +8,7 @@ var dotenv = require('dotenv');
 dotenv.load();
 
 var routes = require('./routes/index');
-var twitchAuth = require('./routes/auth/twitchtv/auth');
-//var twitchAuthCallback = require('./routes/auth/twitchtv/callback');
+var twitchAuth = require('./routes/oauth/twitchtv/index');
 
 var config = require('./config/server');
 
@@ -47,8 +46,7 @@ app.use(require('node-sass-middleware')({
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', routes);
-app.use('/auth/twitchtv', twitchAuth);
-//app.use('/auth/twitchtv/callback', twitchAuthCallback);
+app.use('/oauth/twitchtv', twitchAuth);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
