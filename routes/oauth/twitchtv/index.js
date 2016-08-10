@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-var twitch = require('../../../api/twitchtv/settings.js');
+var twitch = require('../../../helpers/twitch.js');
 var config = require('../../../config/server');
 
 var state = '';
