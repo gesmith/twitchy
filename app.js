@@ -12,18 +12,18 @@ var twitchAuth = require('./routes/oauth/twitchtv/index');
 
 var config = require('./config/server');
 
-var twitch = require('./api/twitchtv/settings.js');
+var twitch = require('./helpers/twitch.js');
 
 var app = express();
 
-app.use('/test', function(req, res) {
-  twitch.getAuthenticatedUserChannel(config.ACCESS_TOKEN, function(request, response) {
-    console.log(response);
-    res.render('test', {
-      data: response
-    });
-  });
-});
+// app.use('/user', function(req, res) {
+//   twitch.getAuthenticatedUserChannel(config.ACCESS_TOKEN, function(request, response) {
+//     console.log(response);
+//     res.render('test', {
+//       data: response
+//     });
+//   });
+// });
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -47,6 +47,43 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', routes);
 app.use('/oauth/twitchtv', twitchAuth);
+
+// * ALEXA ****
+// *****
+var alexa = require('./helpers/alexa-app.js');
+alexa.launch(function(request,response) {
+	response.say("You launched the app!");
+});
+// alexa.dictionary = {"names":["matt","joe","bob","bill","mary","jane","dawn"]};
+// alexa.intent("nameIntent",
+// 	{
+// 		"slots":{"NAME":"LITERAL"}
+// 		,"utterances": [
+// 			"my {name is|name's} {names|NAME}"
+// 			,"set my name to {names|NAME}"
+// 		]
+// 	},
+// 	function(request,response) {
+// 		response.say("Success!");
+// 	}
+// );
+alexa.intent("getTopGames",
+	{
+		"slots":""
+		,"utterances": [
+			"get {my|the|} top games"
+		]
+	},
+	function(request,response) {
+		twitch.getTopGames(null, function (res) {
+      response.say('The top game is ' + res.top[0].game.name);
+
+      response.send();
+    });
+    return false;
+	}
+);
+alexa.express(app);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
