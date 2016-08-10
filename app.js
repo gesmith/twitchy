@@ -45,7 +45,7 @@ app.use(require('node-sass-middleware')({
 }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', routes);
+//app.use('/', routes);
 app.use('/oauth/twitchtv', twitchAuth);
 
 // * ALEXA ****
@@ -57,13 +57,20 @@ alexa.launch(function(request, response) {
 });
 
 alexa.intent("getTopGames", {
-    "slots": "",
+    "slots": {
+      "LIMIT": "NUMBER"
+    },
     "utterances": [
-      "get {my|the|} top games"
+      "{|my|the} top {|LIMIT} {|video} games"
     ]
   },
   function(request, response) {
-    twitch.getTopGames(null, function(req, res) {
+    var limit = request.slot('LIMIT');
+    var params = {};
+    // Default to the first 5 top games.
+    params.limit = limit || 5;
+
+    twitch.getTopGames(params, function(req, res) {
       var topGame = res.top[0].game.name;
       console.log('Response: ' + topGame);
       response.say(`The top game is ${topGame}`);
@@ -76,38 +83,6 @@ alexa.intent("getTopGames", {
     return false;
   }
 );
-alexa.express(app);
-
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  var err = new Error('Not Found');
-  err.status = 404;
-  next(err);
-});
-
-// error handlers
-
-// development error handler
-// will print stacktrace
-if (app.get('env') === 'development') {
-  app.use(function(err, req, res, next) {
-    res.status(err.status || 500);
-    res.render('error', {
-      message: err.message,
-      error: err
-    });
-  });
-}
-
-// production error handler
-// no stacktraces leaked to user
-app.use(function(err, req, res, next) {
-  res.status(err.status || 500);
-  res.render('error', {
-    message: err.message,
-    error: {}
-  });
-});
-
+alexa.express(app, "/echo/");
 
 module.exports = app;
