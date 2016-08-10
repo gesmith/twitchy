@@ -52,7 +52,9 @@ app.use('/oauth/twitchtv', twitchAuth);
 // *****
 var alexa = require('./helpers/alexa-app.js');
 var reprompt = 'What did you say to me?';
+
 alexa.launch(function(request, response) {
+  console.log('launch');
   response.say("You launched the app!").reprompt(reprompt);
 });
 
@@ -61,7 +63,7 @@ alexa.intent("getTopGames", {
       "LIMIT": "NUMBER"
     },
     "utterances": [
-      "{|my|the} top {|LIMIT} {|video} games"
+      "{|my|the} top {-|LIMIT} {|video} games"
     ]
   },
   function(request, response) {
