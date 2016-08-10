@@ -64,10 +64,10 @@ alexa.intent("getTopGames", {
   },
   function(request, response) {
     twitch.getTopGames(null, function(req, res) {
-      let topGame = res.top[0].game.name;
+      var topGame = res.top[0].game.name;
       console.log('Response: ' + topGame);
       response.say(`The top game is ${topGame}`);
-      
+
       response.send();
     }).catch(function(err) {
       console.log('Error');
