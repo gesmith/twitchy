@@ -51,37 +51,30 @@ app.use('/oauth/twitchtv', twitchAuth);
 // * ALEXA ****
 // *****
 var alexa = require('./helpers/alexa-app.js');
-alexa.launch(function(request,response) {
-	response.say("You launched the app!");
+var reprompt = 'What did you say to me?';
+alexa.launch(function(request, response) {
+  response.say("You launched the app!").reprompt(reprompt);
 });
-// alexa.dictionary = {"names":["matt","joe","bob","bill","mary","jane","dawn"]};
-// alexa.intent("nameIntent",
-// 	{
-// 		"slots":{"NAME":"LITERAL"}
-// 		,"utterances": [
-// 			"my {name is|name's} {names|NAME}"
-// 			,"set my name to {names|NAME}"
-// 		]
-// 	},
-// 	function(request,response) {
-// 		response.say("Success!");
-// 	}
-// );
-alexa.intent("getTopGames",
-	{
-		"slots":""
-		,"utterances": [
-			"get {my|the|} top games"
-		]
-	},
-	function(request,response) {
-		twitch.getTopGames(null, function (res) {
-      response.say('The top game is ' + res.top[0].game.name);
 
+alexa.intent("getTopGames", {
+    "slots": "",
+    "utterances": [
+      "get {my|the|} top games"
+    ]
+  },
+  function(request, response) {
+    twitch.getTopGames(null, function(req, res) {
+      let topGame = res.top[0].game.name;
+      console.log('Response: ' + topGame);
+      response.say(`The top game is ${topGame}`);
+      
       response.send();
+    }).catch(function(err) {
+      console.log('Error');
+      response.say('There was an error getting that information from Twitch.').send();
     });
     return false;
-	}
+  }
 );
 alexa.express(app);
 
