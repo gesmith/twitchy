@@ -85,7 +85,7 @@ alexa.intent('updateChannelTitle', {
       "STATUS": "LITERAL"
     },
     "utterances": [
-      "{set|update|make} {|my|the} {stream|stream's|channel|channel's} {title|status} {|to} {-|TITLE}"
+      "{set|update|make} {|my|the} {stream|stream's|channel|channel's} {title|status} {|to} {-|STATUS}"
     ]
   },
   function(request, response) {
