@@ -13,6 +13,7 @@
     "dotenv": "^2.0.0",
     "ejs": "~2.4.1",
     "express": "~4.13.4",
+    "lodash": "^4.14.2",
     "morgan": "~1.7.0",
     "node-sass-middleware": "0.8.0",
     "passport": "^0.3.2",
