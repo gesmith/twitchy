@@ -82,7 +82,7 @@ alexa.intent("getMyFollowerCount", {
 
 alexa.intent('updateChannelTitle', {
     "slots": {
-      "STATUS": "LITERAL"
+      "STATUS": "CHANNEL_TITLE"
     },
     "utterances": [
       "{set|update|make} {|my|the} {stream|stream's|channel|channel's} {title|status} {|to} {-|STATUS}"
