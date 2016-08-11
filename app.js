@@ -63,10 +63,11 @@ alexa.intent("getTopGames", {
   }
 );
 
-alexa.intent('getMyFollowerCount', {
+alexa.intent("getMyFollowerCount", {
     "slots": {},
-    "uterrances": [
-      "{|how|get} {|many|much} {followers|stream's} {|do|does} {my|I} {stream|channel|I} have"
+    "utterances": [
+      "how {many|much} followers {|do|does} {my|I} {stream|channel|I} have",
+      "get my {|stream's|channel's} {follower|followers} count"
     ]
   },
   function(request, response) {
@@ -79,21 +80,54 @@ alexa.intent('getMyFollowerCount', {
   }
 );
 
-alexa.intent('getStreamKey', {
-    "slots": {},
-    "uterrances": [
-      "get {|my|the} {stream|stream's} key"
+alexa.intent('updateChannelTitle', {
+    "slots": {
+      "STATUS": "LITERAL"
+    },
+    "utterances": [
+      "{set|update|make} {|my|the} {stream|stream's|channel|channel's} {title|status} {|to} {-|TITLE}"
     ]
   },
   function(request, response) {
     var token = request.sessionDetails.accessToken;
-    twitch.getAuthenticatedUserChannel(token, function(req, res) {
-      var streamKey = res.stream_key;
-      response.say(streamKey).send();
+    twitch.getAuthenticatedUserChannel(token, function(userReq, userRes) {
+      var username = userRes.name;
+      var status = request.slot('STATUS');
+      var channelOptions = {
+        channel: {
+          status: status
+        }
+      }
+      twitch.updateChannel(username, token, channelOptions, function (req, res) {
+        // console.log(req);
+        // console.log(res);
+        response.say('Your title has been updated.').send();
+      });
+      return false;
     });
     return false;
   }
 );
+
+// just for testing purposes.
+// alexa.intent('getStreamKey', {
+//     "slots": {},
+//     "utterances": [
+//       "get {|my|the} {stream|stream's} key"
+//     ]
+//   },
+//   function(request, response) {
+//     var token = request.sessionDetails.accessToken;
+//     twitch.getAuthenticatedUserChannel(token, function(req, res) {
+//       var streamKey = res.stream_key;
+//       console.log(res);
+//       response.say(streamKey).send();
+//     });
+//     return false;
+//   }
+// );
+
+alexa.express(app);
 
 // Manually hook the handler function into express
 app.post('/twixa',function(req,res) {
