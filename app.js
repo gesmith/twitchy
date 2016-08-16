@@ -55,7 +55,7 @@ alexa.intent("getTopGames", {
     twitch.getTopGames(params, function(req, res) {
       var topGames = _.map(res.top, 'game.name');
       console.log('Response: ' + topGames);
-      response.say(`The top games are ${topGames}`);
+      response.say(`The top games are ${topGames}`).shouldEndSession(false);
 
       response.send();
     });
@@ -74,7 +74,7 @@ alexa.intent("getMyFollowerCount", {
     var token = request.sessionDetails.accessToken;
     twitch.getAuthenticatedUserChannel(token, function(req, res) {
       var followerCount = res.followers;
-      response.say(`Your stream has ${followerCount} followers.`).send();
+      response.say(`Your stream has ${followerCount} followers.`).shouldEndSession(false).send();
     });
     return false;
   }
@@ -85,7 +85,7 @@ alexa.intent('updateChannelTitle', {
       "STATUS": "CHANNEL_TITLE"
     },
     "utterances": [
-      "{set|update|make} {|my|the} {stream|stream's|channel|channel's} {title|status} {|to} {-|STATUS}"
+      "{set|update|make|change} {|my|the} {stream|stream's|channel|channel's} {title|status} {|to} {-|STATUS}"
     ]
   },
   function(request, response) {
@@ -98,10 +98,11 @@ alexa.intent('updateChannelTitle', {
           status: status
         }
       }
+      // requires channel_editor scope
       twitch.updateChannel(username, token, channelOptions, function (req, res) {
         // console.log(req);
         // console.log(res);
-        response.say('Your title has been updated.').send();
+        response.say('Your title has been updated.').shouldEndSession(false).send();
       });
       return false;
     });
@@ -109,6 +110,49 @@ alexa.intent('updateChannelTitle', {
   }
 );
 
+alexa.intent('startCommercialForDuration', {
+    "slots": {
+      "DURATION": "COMMERCIAL_DURATION"
+    },
+    "utterances": [
+      "{start|play} {|a|an|the} {commercial|ad} for {-|DURATION} {|seconds}"
+    ]
+  },
+  function(request, response) {
+    var token = request.sessionDetails.accessToken;
+    twitch.getAuthenticatedUserChannel(token, function(userReq, userRes) {
+      var channel = userRes.name;
+      var duration = request.slot('DURATION') || 30;
+      var params = {
+        length: duration
+      };
+      twitch.startCommercial(channel, token, params, function (req, res) {
+        response.say(`Starting a ${duration} second commercial.`).shouldEndSession(false).send();
+      });
+      return false;
+    });
+    return false;
+  }
+);
+
+alexa.intent('startCommercial', {
+    "slots": {},
+    "utterances": [
+      "{start|play} {|a|an|the} {commercial|ad}"
+    ]
+  },
+  function(request, response) {
+    var token = request.sessionDetails.accessToken;
+    twitch.getAuthenticatedUserChannel(token, function(userReq, userRes) {
+      var channel = userRes.name;
+      twitch.startCommercial(channel, token, {}, function (req, res) {
+        response.say('Commercial starting.').shouldEndSession(false).send();
+      });
+      return false;
+    });
+    return false;
+  }
+);
 // just for testing purposes.
 // alexa.intent('getStreamKey', {
 //     "slots": {},
