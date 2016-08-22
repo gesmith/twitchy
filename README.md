@@ -1,4 +1,4 @@
-# twixa
+# twitchy
 
 ## Installation
 * `git clone <repository-url>` this repository
@@ -9,4 +9,4 @@
 
 ## Generating Alexa schema and intents
 * `npm start`
-* Navigate your browser to: [http://127.0.0.1:3000/twixa](http://127.0.0.1:3000/twixa)
+* Navigate your browser to: [http://127.0.0.1:3000/twitchy](http://127.0.0.1:3000/twitchy)

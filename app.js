@@ -29,7 +29,7 @@ var alexa = require('./helpers/alexa-app.js');
 alexa.express(app);
 
 // Manually hook the handler function into express
-app.post('/twixa',function(req,res) {
+app.post('/twitchy',function(req,res) {
   alexa.request(req.body)        // connect express to alexa-app
     .then(function(response) { // alexa-app returns a promise with the response
       res.json(response);      // stream it to express' output

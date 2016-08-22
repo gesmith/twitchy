@@ -1,5 +1,5 @@
 var AlexaApp = require('alexa-app');
-var alexa = new AlexaApp.app('twixa');
+var alexa = new AlexaApp.app('twitchy');
 var twitch = require('./twitch.js');
 var _ = require('lodash');
 
@@ -9,7 +9,7 @@ var respondWithProcessingError = (response) => {
 };
 
 alexa.launch((request, response) => {
-  response.say("You launched Twixa!");
+  response.say("You launched Twitchy!");
 });
 
 alexa.pre = (request, response, type) => {

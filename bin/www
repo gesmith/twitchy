@@ -5,7 +5,7 @@
  */
 
 var app = require('../app');
-var debug = require('debug')('twixa:server');
+var debug = require('debug')('twitchy:server');
 var http = require('http');
 
 /**
