@@ -2,8 +2,9 @@ var AlexaApp = require('alexa-app');
 var alexa = new AlexaApp.app('twitchy');
 var twitch = require('./twitch.js');
 var _ = require('lodash');
+var Promise = require('bluebird');
 
-var respondWithProcessingError = (response) => {
+var respondWithProcessingError = response => {
   // Catch-all response when API error occurs.
   response.say('There was an error processing your request.').shouldEndSession(false).send();
 };
@@ -12,10 +13,16 @@ alexa.launch((request, response) => {
   response.say("You launched Twitchy!");
 });
 
+// Run before any Alexa request.
 alexa.pre = (request, response, type) => {
   if (!request.sessionDetails.accessToken) {
     response.clear().say("You first need to authorize this skill to use your Twitch account.").send();
   }
+};
+
+var getAuthUser = token => {
+  var promise = Promise.promisify(twitch.getAuthenticatedUser.bind(twitch));
+  return promise(token);
 };
 
 var reprompt = 'Can you repeat that?';
@@ -30,17 +37,18 @@ alexa.intent("getTopGames", {
     ]
   },
   (request, response) => {
-    var limit = request.slot('LIMIT');
+    var limit = parseInt(request.slot('LIMIT')) || 5; // Default to the first 5 top games.
+    console.log(limit);
     var params = {};
-    params.limit = limit || 5; // Default to the first 5 top games.
+    params.limit = limit;
 
-    twitch.getTopGames(params, (req, res) => {
-      if (req && req.error) {
-        respondWithProcessingError(response);
-      } else {
-        var topGames = _.map(res.top, 'game.name');
-        response.say(`The top ${limit} games are: ${topGames}.`).shouldEndSession(false).send();
-      }
+    var getTopGames = Promise.promisify(twitch.getTopGames.bind(twitch));
+    getTopGames(params).then(res => {
+      var topGames = _.map(res.top, 'game.name');
+      response.say(`The top ${limit} games are: ${topGames}.`).shouldEndSession(false).send();
+    }).catch(e => {
+      console.log(e);
+      respondWithProcessingError(response);
     });
     return false;
   }
@@ -55,10 +63,42 @@ alexa.intent("getMyFollowerCount", {
   },
   (request, response) => {
     var token = request.sessionDetails.accessToken;
+    var getAuthUserChannel = Promise.promisify(twitch.getAuthenticatedUserChannel.bind(twitch));
     // requires channel_editor scope
-    twitch.getAuthenticatedUserChannel(token, (req, res) => {
+    getAuthUserChannel(token).then(res => {
       var followerCount = res.followers;
       response.say(`Your stream has ${followerCount} followers.`).shouldEndSession(false).send();
+    }).catch(e => {
+      respondWithProcessingError(response);
+    });
+    return false;
+  }
+);
+
+alexa.intent("getMySubscriberCount", {
+    "slots": {},
+    "utterances": [
+      "how {many|much} {subscribers|subscriptions} {|do|does} {my|I} {stream|channel|I} have",
+      "get my {|stream's|channel's} {subscriber|subscription} count"
+    ]
+  },
+  (request, response) => {
+    var token = request.sessionDetails.accessToken;
+    // requires channel_editor scope
+    getAuthUser(token).then(userRes => {
+      var username = userRes.name;
+      var getChannelSubscriptions = Promise.promisify(twitch.getChannelSubscriptions.bind(twitch));
+      getChannelSubscriptions(username, token, {}).then(res => {
+        var subscriberCount = res._total;
+        response.say(`Your stream has ${subscriberCount} subscribers.`).shouldEndSession(false).send();
+      }).catch(e => {
+        if (e.status === 422) {
+          //"channelName does not have a subscription program"
+          response.say(`${e.message}.`).shouldEndSession(false).send();
+        } else {
+          respondWithProcessingError(response);
+        }
+      });
     });
     return false;
   }
@@ -80,18 +120,15 @@ alexa.intent('updateChannelTitle', {
       response.say('I didn\'t hear a status.').shouldEndSession(false);
       return true;
     } else {
-      twitch.getAuthenticatedUser(token, (userReq, userRes) => {
+      getAuthUser(token).then(userRes => {
         var username = userRes.name;
-        var callback = (req, res) => {
-          if (req && req.error) {
-            respondWithProcessingError(response);
-          } else {
-            response.say('Your title has been updated.').shouldEndSession(false).send();
-          }
-        };
-        var params = [username, token, { channel: { status: status }}, callback];
-        // requires channel_editor scope
-        twitch.updateChannel(...params);
+        var updateChannel = Promise.promisify(twitch.updateChannel.bind(twitch));
+        var params = [username, token, { channel: { status }}];
+        updateChannel(...params).then(() => {
+          response.say('Your title has been updated.').shouldEndSession(false).send();
+        }).catch(e => {
+          respondWithProcessingError(response);
+        });
       });
       return false;
     }
@@ -113,28 +150,26 @@ alexa.intent('updateChannelsCurrentCategory', {
       response.say('I didn\'t hear a category or game.').shouldEndSession(false);
       return true;
     } else {
-      twitch.getAuthenticatedUser(token, (userReq, userRes) => {
+      var searchGames = Promise.promisify(twitch.searchGames.bind(twitch));
+      var updateChannel = Promise.promisify(twitch.updateChannel.bind(twitch));
+      getAuthUser(token).then(userRes => {
         var username = userRes.name;
-        var callback = (req, res) => {
-          if (req && req.error) {
-            respondWithProcessingError(response);
-          } else {
-            response.say('Your current category has been updated.').shouldEndSession(false).send();
-          }
-        };
         // Since the user should only be able to update their game/category to one that is available on twitch,
         // search by the category they specified and use the one that best matches.
-        twitch.searchGames({ query: category, type: 'suggest' }, (searchReq, searchRes) => {
+        searchGames({ query: category, type: 'suggest' }).then(searchRes => {
           if (searchRes.games.length) {
             var queriedGameName = searchRes.games[0].name;
-            var params = [username, token, { channel: { game: queriedGameName }}, callback];
+            var params = [username, token, { channel: { game: queriedGameName }}];
             // requires channel_editor scope
-            twitch.updateChannel(...params);
+            updateChannel(...params).then(() => {
+              response.say('Your current category has been updated.').shouldEndSession(false).send();
+            }).catch(e => {
+              respondWithProcessingError(response);
+            });
           } else {
             response.say('I couldn\'t find a category with that name.').shouldEndSession(false).send();
           }
         });
-
       });
       return false;
     }
@@ -152,26 +187,20 @@ alexa.intent('startCommercial', {
   },
   (request, response) => {
     var token = request.sessionDetails.accessToken;
-    twitch.getAuthenticatedUser(token, (userReq, userRes) => {
+    getAuthUser(token).then((userRes) => {
       var channel = userRes.name;
+      var startCommercial = Promise.promisify(twitch.startCommercial.bind(twitch));
       var duration = request.slot('DURATION') || 30;
-      var callback = (req, res) => {
-        if (req.error) {
-          if (req.status === 422) {
-            // 'Commercials breaks are allowed every 8 min and only when you are online.'
-            response.say(`${req.message}`).shouldEndSession(false).send()
-          } else {
-            respondWithProcessingError(response);
-          }
+      startCommercial(channel, token, { length: duration }).then((res) => {
+        response.say(`Starting a ${duration} second commercial break.`).shouldEndSession(false).send();
+      }).catch(e => {
+        if (e.status === 422) {
+          // 'Commercials breaks are allowed every 8 min and only when you are online.'
+          response.say(`${e.message}`).shouldEndSession(false).send();
         } else {
-          response.say(`Starting a ${duration} second commercial break.`).shouldEndSession(false).send();
+          respondWithProcessingError(response);
         }
-      };
-      var params = [channel, token, { length: duration }, callback];
-
-      // requires channel_commercial scope
-      twitch.startCommercial(...params);
-      return false;
+      });
     });
     return false;
   }
@@ -188,17 +217,17 @@ alexa.intent('getFollowedStreams', {
   },
   (request, response) => {
     var token = request.sessionDetails.accessToken;
-    var callback = (req, res) => {
+    var getAuthUserFollowedStreams = Promise.promisify(twitch.getAuthenticatedUserFollowedStreams.bind(twitch));
+    getAuthUserFollowedStreams(token, { stream_type: 'live' }).then(res => {
       var streams = _.map(res.streams, 'channel.display_name');
       if (streams.length) {
         response.say(`Live streams are: ${streams}.`).shouldEndSession(false).send();
       } else {
         response.say('None of your followed streams are online.').shouldEndSession(false).send();
       }
-    };
-    var params = [token, { stream_type: 'live' }, callback];
-
-    twitch.getAuthenticatedUserFollowedStreams(...params);
+    }).catch(e => {
+      respondWithProcessingError(response);
+    });
     return false;
   }
 );

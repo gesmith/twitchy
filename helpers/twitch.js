@@ -1,4 +1,5 @@
 var TwitchAPI = require('twitch-api');
+
 var twitch = new TwitchAPI({
   clientId: process.env.TWITCHTV_CLIENT_ID,
   clientSecret: process.env.TWITCHTV_CLIENT_SECRET,
